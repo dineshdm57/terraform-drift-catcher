@@ -1,0 +1,219 @@
+{
+  "created": "1745547028296",
+  "updated": "1745547028296",
+  "name": "terraform-drift-catcher",
+  "tags": [],
+  "services": [],
+  "domains": [],
+  "template": {
+    "displayName": "terraform-drift-catcher",
+    "trigger": {
+      "name": "trigger",
+      "valid": true,
+      "displayName": "Every Month",
+      "type": "TRIGGER",
+      "settings": {
+        "blockName": "@openops/block-schedule",
+        "blockVersion": "~0.1.5",
+        "blockType": "OFFICIAL",
+        "packageType": "REGISTRY",
+        "input": {
+          "timezone": "UTC",
+          "hour_of_the_day": 3,
+          "day_of_the_month": 1
+        },
+        "inputUiInfo": {
+          "customizedInputs": {}
+        },
+        "triggerName": "every_month"
+      },
+      "nextAction": {
+        "name": "step_1",
+        "type": "BLOCK",
+        "valid": false,
+        "settings": {
+          "input": {
+            "auth": null,
+            "tags": [],
+            "dryRun": false,
+            "accounts": {},
+            "condition": "AND",
+            "filterByARNs": false,
+            "instanceTypes": [],
+            "filterProperty": {
+              "regions": []
+            },
+            "instanceStates": [
+              "running"
+            ]
+          },
+          "blockName": "@openops/block-aws",
+          "blockType": "OFFICIAL",
+          "actionName": "ec2_get_instances",
+          "inputUiInfo": {
+            "customizedInputs": {}
+          },
+          "packageType": "REGISTRY",
+          "blockVersion": "~0.0.3",
+          "errorHandlingOptions": {
+            "retryOnFailure": {
+              "value": false
+            },
+            "continueOnFailure": {
+              "value": false
+            }
+          }
+        },
+        "nextAction": {
+          "name": "step_2",
+          "type": "BLOCK",
+          "valid": true,
+          "settings": {
+            "input": {
+              "url": "Link to your .tfstate or API",
+              "body": {},
+              "method": "GET",
+              "headers": {},
+              "timeout": null,
+              "failsafe": false,
+              "body_type": "none",
+              "use_proxy": false,
+              "queryParams": {},
+              "proxy_settings": {}
+            },
+            "blockName": "@openops/block-http",
+            "blockType": "OFFICIAL",
+            "actionName": "send_request",
+            "inputUiInfo": {
+              "customizedInputs": {}
+            },
+            "packageType": "REGISTRY",
+            "blockVersion": "~0.5.1",
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": false
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "nextAction": {
+            "name": "step_3",
+            "type": "LOOP_ON_ITEMS",
+            "valid": true,
+            "settings": {
+              "items": "from step 2",
+              "inputUiInfo": {
+                "customizedInputs": {}
+              }
+            },
+            "nextAction": {
+              "name": "step_6",
+              "type": "BLOCK",
+              "valid": true,
+              "settings": {
+                "input": {},
+                "blockName": "@openops/block-end-flow",
+                "blockType": "OFFICIAL",
+                "actionName": "end_workflow",
+                "inputUiInfo": {
+                  "customizedInputs": {}
+                },
+                "packageType": "REGISTRY",
+                "blockVersion": "~0.0.1",
+                "errorHandlingOptions": {
+                  "retryOnFailure": {
+                    "value": false
+                  },
+                  "continueOnFailure": {
+                    "value": false
+                  }
+                }
+              },
+              "displayName": "End Workflow"
+            },
+            "displayName": "Loop on Items",
+            "firstLoopAction": {
+              "name": "step_4",
+              "type": "CODE",
+              "valid": true,
+              "settings": {
+                "input": {
+                  "From Step 3": "Terraform instance list",
+                  "From Step 4": "Current EC2 instance ID"
+                },
+                "sourceCode": {
+                  "code": "export const code = async (inputs) => {\n  const ec2Id = inputs.liveId;\n  const declared = inputs.tfList; // array of IDs\n\n\n  if (!declared.includes(ec2Id)) {\n    return `Unmanaged EC2 found: ${ec2Id}`;\n  }\n  return null;\n};\n",
+                  "packageJson": "{}"
+                },
+                "inputUiInfo": {
+                  "customizedInputs": {}
+                },
+                "errorHandlingOptions": {
+                  "retryOnFailure": {
+                    "value": false
+                  },
+                  "continueOnFailure": {
+                    "value": false
+                  }
+                }
+              },
+              "nextAction": {
+                "name": "step_5",
+                "type": "BLOCK",
+                "valid": false,
+                "settings": {
+                  "input": {
+                    "auth": null,
+                    "file": null,
+                    "text": {
+                      "text": "Use the output from Step 5 (only if not null) "
+                    },
+                    "blocks": {},
+                    "threadTs": null,
+                    "username": null,
+                    "headerText": {
+                      "headerText": null
+                    },
+                    "conversationId": null,
+                    "blockKitEnabled": false
+                  },
+                  "blockName": "@openops/block-slack",
+                  "blockType": "OFFICIAL",
+                  "actionName": "send_slack_message",
+                  "inputUiInfo": {
+                    "customizedInputs": {}
+                  },
+                  "packageType": "REGISTRY",
+                  "blockVersion": "~0.5.2",
+                  "errorHandlingOptions": {
+                    "retryOnFailure": {
+                      "value": false
+                    },
+                    "continueOnFailure": {
+                      "value": false
+                    }
+                  }
+                },
+                "displayName": "Send Message"
+              },
+              "displayName": "Custom TypeScript Code"
+            }
+          },
+          "displayName": "Send HTTP request"
+        },
+        "displayName": "EC2 Get Instances"
+      }
+    },
+    "valid": false,
+    "description": ""
+  },
+  "blocks": [
+    "@openops/block-schedule",
+    "@openops/block-aws",
+    "@openops/block-http",
+    "@openops/block-slack",
+    "@openops/block-end-flow"
+  ]
+}
